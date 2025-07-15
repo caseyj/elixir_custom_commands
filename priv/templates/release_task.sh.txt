@@ -1,0 +1,4 @@
+# rel/overlays/{task}.sh
+#!/bin/sh
+# Runs the {task} function
+bin/custom_commands eval "CustomCommands.Release.{task}" "$@"

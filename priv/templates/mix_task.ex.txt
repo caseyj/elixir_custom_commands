@@ -1,0 +1,8 @@
+defmodule Mix.Tasks.{task_camel} do
+  use Mix.Task
+
+  @impl Mix.Task
+  def run(args) do
+    CustomCommands.Release.{task}(args)
+  end
+end
