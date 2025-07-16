@@ -1,8 +1,17 @@
 # CustomCommands
 
-This shows off how I implemented custom commands for elixir projects such that they would be available in both releases and as mix tasks with little difference in how they are called.  
-  
-There are definitely some improvements that can be made, however this gives a pretty good starting place for a few patterns.
+This project was designed to offer a quick and easy way to generate nearly identical `mix` tasks as well as shell commands for an Elixir project deployed to some system. By following the documented pattern, every function available in a provided file will be made into both a `mix task` as well as a shell script ready for deployment on a system.
+
+```shell
+mix my_new_task "hello world"
+./my_new_task "hello world"
+```
+
+When building software many teams seek to have a similar set of commands available in their dev environment as they do in their production software. Elixir offers out of the box, `Mix` a tool that does all of the hard work in managing a project from dependency management to building a release file. Mix also makes custom commands available in a system called `mix tasks`, which are easily made and used by developers. However, `Mix` is not meant to be deployed on a target system, and invoking a `mix task` in "production" is not considered best practice. 
+
+To bridge that gap, Elixir documentation reccomends building shell scripts that invoke functions inside of the executable. This project templates these files and upon running the new `mix task` documented below, `mix gen.commands`, those new commands become available as mix tasks immediately, and upon running `mix release` those commands become available in your target build directory. 
+
+This is a demo project to show how you can quickly generate identical mix and command line scripts ready for use with your project.
 
 ### Set Up
 
@@ -20,10 +29,14 @@ First generate the files for releases and mix tasks, and generate a release:
 ```shell 
 MIX_ENV=prod mix release
 ```
+ALTERNATIVELY, you may invoke the following command, and not generate a release:
+```shell
+mix gen.commands
+```
 
-This command will generate 3 shell scripts in `rel/overlays` and 3 `.ex` files in `lib/mix/tasks`
+The `mix gen.commands` task will generate 3 shell scripts in `rel/overlays` and 3 `.ex` files in `lib/mix/tasks`. This task is invoked during the `mix release` process, prior to running the Elixir provided `mix release` task.
 
-Additionally, the process that builds the release artifact the overlay `.sh` files will also be moved into `_build/prod/rel/custom_commands`
+Additionally, during the process that builds the release artifact the overlay `.sh` files will also be moved into `_build/prod/rel/custom_commands`
 
 ```
 _build/prod/rel/custom_commands/
@@ -67,8 +80,24 @@ mix divide_by_2 --dividend=24
 cd _build/prod/rel/custom_commands
 ./divide_by_2.sh --dividend=24
 ```
+### How does this work
+`Sourceror` is used to read a hardcoded file path `lib/custom_commands/release.ex`, and find all of the public functions defined. Each of those function names are then given to a list of templates that conduct find and replace activities. The templates are available at `priv/templates` and do not take advantage of Elixir's built in templating system. 
+
+The ability to generate these every time you run `mix compile` or `mix release` is achieved with an alias function in `mix.exs` like so:
+```elixir
+defp aliases do
+    [
+      compile: ["gen.commands", "compile"],
+      release: ["gen.commands", "release"]
+    ]
+end
+```
+
 ### Extending this
 To take full advantage of the pattern, all you must do is add public functions to `lib/custom_commands/release.ex`. Feel free to bring this into your project and take full advantage of making this available. 
+
+### Future Considerations
+I may republish this in the future with a full mix task created for download and use in your project with a larger test suite when I have more time available to dedicate. 
 
 ### Resources
 - I wrote about this on my substack at [jcasey-tech](https://jcaseytech.substack.com/p/custom-commands-in-elixir) which goes into detail on the reasoning I went through to go through this process and how I came to the current solution
